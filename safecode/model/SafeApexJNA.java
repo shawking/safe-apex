@@ -457,7 +457,12 @@ public class SafeApexJNA implements  Serializable {
     	SafeApexCell  cell = crop.getCell();
     	SafeApexVoxel voxels [] = cell.getVoxels();
     	for (int j=0; j < voxels.length; j++) {
-    		c.HI_UW[j] = (float) voxels[j].getCropWaterUptake();  // UW = Water use rate by soil layer
+    		System.out.println("SafeApexJNA Line 460 and j= "+j);
+    		System.out.println("SafeApexJNA Line 461 and size of HI_UW= "+c.HI_UW.length);
+			if(j>=12){
+				continue;
+			}
+			c.HI_UW[j] = (float) voxels[j].getCropWaterUptake();  // UW = Water use rate by soil layer
     		c.HI_UNM[j] = (float) voxels[j].getCropNitrogenUptake();
     	}
     	

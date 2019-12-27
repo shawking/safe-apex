@@ -206,15 +206,19 @@ public class SafeApexCell extends SquareCell {
 			int miniCoucheMin = voxels[i].getMiniCoucheMin();		//starting  miniCouches  for current voxel
 			int miniCoucheMax = voxels[i].getMiniCoucheMax();	   //ending    miniCouches  for current voxel
 			int miniCoucheNumber = voxels[i].getMiniCoucheNumber();	   //number    miniCouches  for current voxel
-
+			System.out.println("SafeApexCell Line 209----Outside miniCouch loop.");
 			for (int z=miniCoucheMin; z <= miniCoucheMax; z++) {
+				if(z>=200){
+				continue;
+				}
 				System.out.println("SafeApexCell Line 211 and z= "+z);
-				System.out.println("SafeApexCell Line 212 and Day= "+simulationDay);
+				System.out.println("SafeApexCell Line 212 and Root Depth "+rt_depth[z]);
 				System.out.println("SafeApexCell Line 213 and voxelMoisture= "+voxelMoisture);
 				System.out.println("SafeApexCell Line 214 and miniCoucheMin= "+miniCoucheMin);
 				System.out.println("SafeApexCell Line 215 and miniCoucheMax= "+miniCoucheMax);
 				System.out.println("SafeApexCell Line 216 and Voxel Number i= "+i);
 				System.out.println("SafeApexCell Line 217 and voxels[2].getMiniCoucheMin= "+voxels[2].getMiniCoucheMin());
+	
 				if(z<=11){
 					voxelMoisture 	+= ApexCommun.HI_SWST[z];	 				// voxel soil humidity % 
 					soilEvapo  		+= ApexCommun.HI_SEV[z];				    // voxel soil evaporation 	mm		
@@ -295,6 +299,9 @@ public class SafeApexCell extends SquareCell {
 			int miniCoucheNumber = voxels[i].getMiniCoucheNumber();	   //number    miniCouches  for current voxel
 			
 			for (int z=miniCoucheMin; z <= miniCoucheMax; z++) {
+				if(z>=20){
+					continue;
+				}
 				voxelMoisture 	+= ApexCommun.HI_SWST[z];				    // voxel soil humidity 	%	
 				voxelNo3 		+= ApexCommun.HI_WNO3[z+1];					// voxel soil no3 kg N ha-1		
 				voxelNh4 		+= ApexCommun.HI_WNH3[z] * 1.05915;					// voxel soil nh4 kg N ha-1			
