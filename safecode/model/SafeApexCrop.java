@@ -6,6 +6,7 @@ import java.util.Iterator;
 import capsis.defaulttype.Speciable;
 import capsis.defaulttype.Species;
 import safeapex.apex.*;
+import java.lang.Math;
 
 
 /**
@@ -748,33 +749,35 @@ import safeapex.apex.*;
 		
 		//call JNA native method
 		jna.dayLoopStart (this, julianDay,cellRad,cellRain,cellEtp);
-		System.out.println("SafeApexCrop Line 751");
+		System.out.println("SA_Crop.processGrowth1.Line 751");
 		//APEX variable storage
+		SafeApexApexCommun ApexCommun = cell.getCrop().apexCrop; //Should 'this.HI_...' be used instead??? MB 2.19.2020
 		
+		System.out.println("This is soil evap in voxel1 "+ ApexCommun.HI_SEV[11]);
 		//TODO MICHAEL BORUCKE=======================================================
 		//WHERE ARE THESE CROP VALUES IN APEX  ???
 		// replace the 0 values by apex object variables
 		//===========================================================================
 
-		this.soilEvaporation = 0;	 			//mm
+		this.soilEvaporation = ApexCommun.HI_SEV[0];	 			//mm
 		this.emergenceDay 	 = 0;    			//DOY
-		this.floweringDay 	 = 0;    			//DOY
-		this.rootDepth 		 = 0;	 			//m
-		this.lai 			 = 0; 
-		this.biomass 		 = 0;				//t ha-1		
-		this.grainBiomass 	 = 0;				//t ha-1
+		if(ApexCommun.HI_HI[0] > 0 && this.floweringDay == 0){this.floweringDay = julianDay; }    			//DOY this.floweringDay 	 = 0;  
+		this.rootDepth 		 = ApexCommun.HI_RD[0];	 			//m
+		this.lai 			 = ApexCommun.HI_SLAI[0]; 
+		this.biomass 		 = ApexCommun.HI_DM[0];				//t ha-1		
+		this.grainBiomass 	 = ApexCommun.HI_HI[0] * ApexCommun.HI_STL[0];				//t ha-1
 
 		
-		this.cNgrain=0;					//%
-		this.cNplante=0;					//%
-		this.qNgrain=0;					//kg ha-1
-		this.qNplante=0;					//kgN.ha-1
-		System.out.println("SafeApexCrop Line 772");
+		this.cNgrain  		 = ApexCommun.HI_CNLV[0];					//%
+		this.cNplante 		 = ApexCommun.HI_CNLV[0];					// Nitrogen concentration of entire plant %
+		this.qNgrain 		 = ApexCommun.HI_YLN;					//Amount of nitrogen in harvested organs (grains / fruits)  kg ha-1 
+		this.qNplante		 = ApexCommun.HI_WBMN[0];					//Amount of nitrogen taken up by the plant   kgN.ha-1
+		System.out.println("SA_Crop.processGrowth1.Line 772");
 		
 		
 		//WATER and NITROGEN DEMAND
-		this.waterDemand  	 = 0;				//mm
-		this.nitrogenDemand  = 0;				//kg ha-1
+		this.waterDemand  	 = ApexCommun.HI_UX;				//mm
+		this.nitrogenDemand  = ApexCommun.HI_DMN;				//kg ha-1
 
 
 		//Sum of roots calculation (for water repartition module)
@@ -787,7 +790,7 @@ import safeapex.apex.*;
 			//IF RACHMAT VERSION ONLY !!!!
 			double waterDemandReductionFactor = this.getFineRoots().getWaterDemandReductionFactor();
 			setWaterDemandReduced (this.getWaterDemand() * waterDemandReductionFactor);		//mm
-		System.out.println("SafeApexCrop Line 791");
+		System.out.println("SA_Crop.processGrowth1.Line 791");
 		}
 
 		//Nitrogen sink strength with nitrogen demand of the day before
@@ -796,7 +799,7 @@ import safeapex.apex.*;
 
 		//cumulation of Rain transmitted on the crop
 		this.totalRain				+= cellRain;
-		System.out.println("SafeApexCrop Line 799");
+		System.out.println("SA_Crop.processGrowth1.Line 799");
 		return;
 	}
 
@@ -805,64 +808,52 @@ import safeapex.apex.*;
 	 * APEX CROP process growth part II (after water repartition)
 	 **/
 	public void processGrowth2 (SafeApexJNA jna, int julianDay) {
-
+		System.out.println("SA_Crop.processGrowth2.Line 808");
 		//call JNA native method	
 		jna.dayLoopEnd (this);
-					
+		SafeApexApexCommun ApexCommun = cell.getCrop().apexCrop; //Should 'this.HI_...' be used instead??? MB 2.19.2020			
 		//TODO MICHAEL BORUCKE=======================================================
 		//WHERE ARE THESE CROP VALUES IN APEX  ???
 		// replace the 0 values by apex object variables
 		//===========================================================================
-		/*TGRAZ.f90 Line 85:
-			! GRAZING YIELD FOR STANDING LIVE 
-			YLD(JJ)=GRLV(JJ)*HE(JT1)
 
-			ALSO,
-
-			In output file OUTPUT.ACY, there is YLDG which is
-			GRAIN, FIBER, ETC CROP YIELD (T/HA)
-
-			Why is there no YLD calculation for non-grazed crops? And where is YLDG calculated?
-*/
 					
-		this.phenologicStage 		= 0;
-		this.harvestDay 			= 0;	//DOY
-		this.yield 			= 0;	//t.ha-1 (0 % water)
-/*		
-		Root Depth (RD) in m is calculated (in theoretical) as: 
-			RD(i)=min(2.5*RDMX(i)*HUI(i),RDMX,RZ) 
-			But in CGROW.f90 calculated as:
-			RD(JJK,ISA)=MIN(RDMX(JJK),Z(LID(NBSL(ISA),ISA),ISA),XX)
-*/			
-		this.rootDepth 				= 0;	//m
-		this.extin					= 0;	//ND
-		this.albedoLai 				= 0;	//ND
-		this.plantDensity	        = 0;	//plants.m-2
+		this.phenologicStage 		= 0;	//Cannot find the definition of this MB 2.19.2020
+		if(ApexCommun.HI_IHC[0] == 1){this.harvestDay = julianDay;}	//DOY
+		this.yield 					= ApexCommun.HI_YLD[0];	//t.ha-1 (0 % water)
+		
+		this.rootDepth 				= ApexCommun.HI_RD[0];	//m
+		this.extin					= ApexCommun.HI_EXTC[0];	//ND
+		this.albedoLai 				= ApexCommun.HI_SALB[0];	//ND  //Albedo of the crop cobining soil with vegetation  SD	
+		this.plantDensity	        = ApexCommun.HI_POPX[julianDay];	//plants.m-2
 		this.cropTemperature 	    = 0;	//degree C
-		this.cropMaxTemperature 	= 0;	//degree C
-		this.cropMinTemperature 	= 0;	//degree C
-		this.soilSurfaceTemperature = 0;	//degree C
-		this.soilManagementDepth 	= 0;	//m
+		this.cropMaxTemperature 	= ApexCommun.HI_TMX[0];	//degree C
+		this.cropMinTemperature 	= ApexCommun.HI_TMN[0];	//degree C
+		this.soilSurfaceTemperature = ApexCommun.HI_STMP[0];	//degree C
+		this.soilManagementDepth 	= ApexCommun.HI_TLD[0];	//m
 
-		this.lai 			= 0; 	//m2 m-2
-		this.eai			= 0;	//m2 m-2	  
-		this.height 		= 0;	//m
+		this.lai 			= ApexCommun.HI_SLAI[0];; 	//m2 m-2
+		this.eai			= 0;	//ear area index??? m2 m-2	  
+		this.height 		= ApexCommun.HI_CPHT[0];	//m
 		this.grainNumber 	= 0;	// nbr m-2
 		this.grainWeight 	= 0;	// g
 		
 		this.sla 			= 0;	//cm2 g-1
-		this.resperenne     = 0;	//t ha-1	
-		this.interceptedPar = 0; 	// MJ m-2
-		this.cNgrain 		= 0;	//%
-		this.cNplante 		= 0;	//%
-		this.qNgrain		= 0;	//kg h-1
-	
-
-		this.qNplante 		= 0;	//kgN.ha-1
-		this.biomass 		= 0;	//t ha-1		
-		this.grainBiomass 	= 0;	//convert g m-2 in t ha-1
-		this.carbonResidus 	= 0;	//kgC.ha-1
-		this.nitrogenResidus = 0;	//kgN.ha-1
+		this.resperenne     = 0;	//C crop reserve for perenial crops) t ha-1
+		
+		if(ApexCommun.HI_DDM[julianDay] > 0){
+			this.interceptedPar = ApexCommun.HI_DDM[julianDay]/(ApexCommun.HI_WA[julianDay] - ApexCommun.HI_WAVP[julianDay] * Math.max(ApexCommun.HI_VPD-1,(float) -.5));
+		}
+		//this.interceptedPar = 0; 	// MJ m-2
+		
+		this.cNgrain 		= ApexCommun.HI_CNLV[0];	//%
+		this.cNplante 		= ApexCommun.HI_CNLV[0];	//%
+		this.qNgrain		= ApexCommun.HI_YLN;	//kg h-1
+		this.qNplante 		= ApexCommun.HI_WBMN[0];	//kgN.ha-1
+		this.biomass 		= ApexCommun.HI_DM[0];	//t ha-1		
+		this.grainBiomass 	= ApexCommun.HI_HI[0] * ApexCommun.HI_STL[0];	//convert g m-2 in t ha-1
+		this.carbonResidus 	= ApexCommun.HI_WLSC[0];	//kgC.ha-1
+		this.nitrogenResidus = ApexCommun.HI_WLSN[0];	//kgN.ha-1
 		//---------------------------------------------------------------------------
 
 		//WATER (mm) 
@@ -1266,6 +1257,7 @@ import safeapex.apex.*;
 	public float getNitrogenDemand () {return nitrogenDemand;}
 	public float getNitrogenUptake () {return nitrogenUptake;}
 	public void setNitrogenUptake (double v) {nitrogenUptake =  (float) v;}
+	public void setNitrogenDemand (double v) {nitrogenDemand =  (float) v;}   //Created by MJB 1.13.20
 	public float getNitrogenRain () {return  nitrogenRain;}
 	
 	public float getDrainageWaterTable () {return drainageWaterTable;}
